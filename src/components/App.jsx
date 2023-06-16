@@ -96,7 +96,7 @@ export const App = () => {
               }}
             >
               {' '}
-              ...Whoops, something went wrong, try again
+              ...Something went wrong. Please, try again!
             </p>
           )}
         </div>
