@@ -29,6 +29,7 @@ export const App = () => {
       setImages(response);
       setQuery(searchInput.value);
       setPageNr(2);
+      setLoading({ isLoading: true });
     } catch (error) {
       setError(error);
     } finally {
@@ -40,31 +41,32 @@ export const App = () => {
     setLoading({ isLoading: true });
     const response = await fetchImages(searchQuery, pageNr);
     setImages([...images, ...response]);
-    setLoading(false);
     setPageNr(pageNr + 1);
+    setLoading({ isLoading: false });
   };
 
   const handleImageClick = e => {
-    setModalOpen({ isModalOpen: true });
+    setModalOpen(true);
     setModalAlt(e.target.alt);
     setModalImg(e.target.name);
   };
 
   const handleModalClose = () => {
-    setModalOpen({ isModalOpen: false });
+    setModalOpen(false);
     setModalImg('');
     setModalAlt('');
   };
 
+  const handleEscapeKey = e => {
+    if (e.code === 'Escape') {
+      handleModalClose();
+    }
+  };
+
   useEffect(() => {
-    const handleEscapeKey = e => {
-      if (e.code === 'Escape') {
-        handleModalClose();
-      }
-    };
-    window.addEventListener('keydown', this.handleEscapeKey);
+    window.addEventListener('keydown', handleEscapeKey);
     return () => {
-      window.removeEventListener('keydown', this.handleEscapeKey);
+      window.removeEventListener('keydown', handleEscapeKey);
     };
   });
 
@@ -77,7 +79,7 @@ export const App = () => {
         color: '#010101',
       }}
     >
-      {isLoading ? (
+      {isLoading && pageNr === 1 ? (
         <Loader />
       ) : (
         <div>
