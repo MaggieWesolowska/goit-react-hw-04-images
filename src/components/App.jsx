@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader } from './Loader/Loader';
 import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
@@ -7,128 +7,101 @@ import { Modal } from './Modal/Modal';
 import { fetchImages } from './Api/fetchImages';
 import React from 'react';
 
-export class App extends Component {
-  state = {
-    images: [],
-    searchQuery: '',
-    pageNr: 1,
-    isLoading: false,
-    isModalOpen: false,
-    modalImg: '',
-    modalAlt: '',
-    error: null,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [searchQuery, setQuery] = useState('');
+  const [pageNr, setPageNr] = useState(1);
+  const [isLoading, setLoading] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [modalImg, setModalImg] = useState('');
+  const [modalAlt, setModalAlt] = useState('');
+  const [error, setError] = useState(null);
 
-  handleSubmit = async e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    this.setState({ isLoading: true });
+    setLoading({ isLoading: true });
     const searchInput = e.target.elements.searchInput;
     if (searchInput.value.trim() === '') {
       return;
     }
     try {
-      const response = await fetchImages(searchInput.value);
-      this.setState({
-        images: response,
-        searchQuery: searchInput.value,
-        pageNr: 1,
-      });
+      const response = await fetchImages(searchInput.value, 1);
+      setImages(response);
+      setQuery(searchInput.value);
+      setPageNr(2);
     } catch (error) {
-      this.setState({ error });
+      setError(error);
     } finally {
-      this.setState({ isLoading: false });
+      setLoading({ isLoading: false });
     }
   };
 
-  handleMoreButton = async () => {
-    const response = await fetchImages(
-      this.state.searchQuery,
-      this.state.pageNr + 1
-    );
-    this.setState({
-      images: [...this.state.images, ...response],
-      pageNr: this.state.pageNr + 1,
-    });
+  const handleMoreButton = async () => {
+    setLoading({ isLoading: true });
+    const response = await fetchImages(searchQuery, pageNr);
+    setImages([...images, ...response]);
+    setLoading(false);
+    setPageNr(pageNr + 1);
   };
 
-  handleImageClick = e => {
-    this.setState({
-      isModalOpen: true,
-      modalAlt: e.target.alt,
-      modalImg: e.target.name,
-    });
+  const handleImageClick = e => {
+    setModalOpen({ isModalOpen: true });
+    setModalAlt(e.target.alt);
+    setModalImg(e.target.name);
   };
 
-  handleModalClose = () => {
-    this.setState({
-      isModalOpen: false,
-      modalImg: '',
-      modalAlt: '',
-    });
+  const handleModalClose = () => {
+    setModalOpen({ isModalOpen: false });
+    setModalImg('');
+    setModalAlt('');
   };
 
-  handleEscapeKey = e => {
-    if (e.code === 'Escape') {
-      this.handleModalClose();
-    }
-  };
-
-  componentDidMount() {
+  useEffect(() => {
+    const handleEscapeKey = e => {
+      if (e.code === 'Escape') {
+        handleModalClose();
+      }
+    };
     window.addEventListener('keydown', this.handleEscapeKey);
-  }
+    return () => {
+      window.removeEventListener('keydown', this.handleEscapeKey);
+    };
+  });
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleEscapeKey);
-  }
-
-  render() {
-    const { isLoading, images, isModalOpen, modalImg, modalAlt, error } =
-      this.state;
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          color: '#010101',
-        }}
-      >
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <div>
-            <Searchbar onSubmit={this.handleSubmit} />
-            <ImageGallery
-              images={images}
-              onImageClick={this.handleImageClick}
-            />
-            {images.length >= 12 ? (
-              <Button onClick={this.handleMoreButton} />
-            ) : null}
-            {error && (
-              <p
-                style={{
-                  marginLeft: 30,
-                  fontWeight: 'bold',
-                  color: '#00415a',
-                  textShadow: '1px 1px 2px rgba(0, 0, 0, 0.3)',
-                }}
-              >
-                {' '}
-                ...Whoops, something went wrong, try again
-              </p>
-            )}
-          </div>
-        )}
-        {isModalOpen ? (
-          <Modal
-            src={modalImg}
-            alt={modalAlt}
-            handleClose={this.handleModalClose}
-          />
-        ) : null}
-      </div>
-    );
-  }
-}
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: '#010101',
+      }}
+    >
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <div>
+          <Searchbar onSubmit={handleSubmit} />
+          <ImageGallery images={images} onImageClick={handleImageClick} />
+          {images.length >= 12 ? <Button onClick={handleMoreButton} /> : null}
+          {error && (
+            <p
+              style={{
+                marginLeft: 30,
+                fontWeight: 'bold',
+                color: '#00415a',
+                textShadow: '1px 1px 2px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              {' '}
+              ...Whoops, something went wrong, try again
+            </p>
+          )}
+        </div>
+      )}
+      {isModalOpen ? (
+        <Modal src={modalImg} alt={modalAlt} handleClose={handleModalClose} />
+      ) : null}
+    </div>
+  );
+};
