@@ -68,7 +68,7 @@ export const App = () => {
     return () => {
       window.removeEventListener('keydown', handleEscapeKey);
     };
-  });
+  }, []);
 
   return (
     <div
